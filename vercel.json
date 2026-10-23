@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "cd careflow && npm run build",
+  "outputDirectory": "careflow/.next",
+  "installCommand": "cd careflow && npm install"
+}

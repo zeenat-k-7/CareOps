@@ -6,27 +6,29 @@
 import type { AppState, Patient, StaffMember, TemperatureReading, DoctorVisit, Treatment, AuditEvent, Bed } from '@/types';
 import { generateId, toDateString } from './utils';
 
+const BASE_DATE_ISO = '2026-10-23T18:00:00.000Z';
+
 // Helper: date N days ago at a given time
 function daysAgoAt(n: number, hour = 8, minute = 0): string {
-  const d = new Date();
+  const d = new Date(BASE_DATE_ISO);
   d.setDate(d.getDate() - n);
   d.setHours(hour, minute, 0, 0);
   return d.toISOString();
 }
 
 function todayAt(hour: number, minute = 0): string {
-  const d = new Date();
+  const d = new Date(BASE_DATE_ISO);
   d.setHours(hour, minute, 0, 0);
   return d.toISOString();
 }
 
 function dateStrDaysAgo(n: number): string {
-  const d = new Date();
+  const d = new Date(BASE_DATE_ISO);
   d.setDate(d.getDate() - n);
   return toDateString(d);
 }
 
-const TODAY = toDateString(new Date());
+const TODAY = '2026-10-23';
 
 // ---- STAFF ----
 
@@ -601,6 +603,6 @@ export function createInitialState(): AppState {
     treatments: DEMO_TREATMENTS,
     auditLog: DEMO_AUDIT,
     seeded: true,
-    lastReset: new Date().toISOString(),
+    lastReset: BASE_DATE_ISO,
   };
 }

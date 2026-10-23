@@ -1,0 +1,13 @@
+{
+  "name": "careops-root",
+  "private": true,
+  "workspaces": [
+    "careflow"
+  ],
+  "scripts": {
+    "dev": "npm --prefix careflow run dev",
+    "build": "npm --prefix careflow run build",
+    "start": "npm --prefix careflow run start",
+    "test": "node --prefix careflow careflow/scripts/test-runner.mjs"
+  }
+}

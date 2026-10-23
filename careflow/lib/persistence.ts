@@ -3,15 +3,25 @@
 // Handles read/write with graceful degradation for SSR and errors
 // ============================================================
 
-import type { AppState } from '@/types';
+import type { AppState, Bed } from '@/types';
 import { createInitialState } from './seed';
 
 const STORAGE_KEY = 'careflow_state_v1';
 
+const STATIC_SSR_STATE: AppState = {
+  patients: [],
+  staff: [],
+  beds: Array.from({ length: 74 }, (_, i) => ({ number: i + 1 })),
+  temperatureReadings: [],
+  doctorVisits: [],
+  treatments: [],
+  auditLog: [],
+  seeded: false,
+};
+
 export function loadState(): AppState {
   if (typeof window === 'undefined') {
-    // SSR: return initial state without persisting
-    return createInitialState();
+    return STATIC_SSR_STATE;
   }
 
   try {
@@ -29,7 +39,7 @@ export function loadState(): AppState {
     // Ensure beds array always has exactly 74 entries
     if (parsed.beds.length !== 74) {
       // Rebuild beds from patient data
-      const beds = Array.from({ length: 74 }, (_, i) => ({ number: i + 1 }));
+      const beds: Bed[] = Array.from({ length: 74 }, (_, i) => ({ number: i + 1 }));
       parsed.patients
         .filter((p) => p.status !== 'discharged' && p.status !== 'death_confirmed')
         .forEach((p) => {

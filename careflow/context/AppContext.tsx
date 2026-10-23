@@ -177,11 +177,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       let status: PatientStatus = p.status;
       if (p.status === 'discharge_approved') {
-        // If fever added, this gets cancelled separately; keep approved
         status = 'discharge_approved';
-      } else if (eligible && p.status !== 'discharge_approved') {
+      } else if (eligible) {
         status = 'eligible';
-      } else if (!eligible && (p.status === 'eligible')) {
+      } else if (p.status === 'eligible') {
         status = 'active';
       }
 

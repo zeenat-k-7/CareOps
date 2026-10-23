@@ -3,7 +3,7 @@
 import { useApp } from '@/context/AppContext';
 import type { NavItem } from './AppShell';
 import { Bell, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatDateTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
@@ -24,8 +24,24 @@ interface TopBarProps {
 export default function TopBar({ activeNav, onNav: _ }: TopBarProps) {
   const { currentUser, notifications, markNotificationRead, clearNotifications } = useApp();
   const [showNotifs, setShowNotifs] = useState(false);
-
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const [dateDisplay, setDateDisplay] = useState('Friday, 23 October 2026');
+
+  useEffect(() => {
+    try {
+      setDateDisplay(
+        new Date().toLocaleDateString('en-IN', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+      );
+    } catch {
+      // fallback
+    }
+  }, []);
 
   function notifIcon(type: string) {
     switch (type) {
@@ -41,7 +57,7 @@ export default function TopBar({ activeNav, onNav: _ }: TopBarProps) {
       <div>
         <h1 className="text-base font-semibold text-slate-900">{PAGE_TITLES[activeNav]}</h1>
         <p className="text-xs text-slate-400 mt-0.5">
-          {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          {dateDisplay}
         </p>
       </div>
 
