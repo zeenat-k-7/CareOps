@@ -1,28 +1,81 @@
 @import "tailwindcss";
 
-:root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --navy: #0f172a;
-  --teal: #0d9488;
-  --teal-light: #ccfbf1;
-  --border: #e2e8f0;
+@layer base {
+  :root {
+    --background: #f8fafc;
+    --foreground: #0f172a;
+    --navy: #0f172a;
+    --teal: #0d9488;
+    --teal-dark: #0f766e;
+    --teal-light: #f0fdfa;
+    --border: #e2e8f0;
+    --card: #ffffff;
+    --muted: #64748b;
+  }
+
+  * {
+    border-color: #e2e8f0;
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Reset default form input styles */
+  input[type="text"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="date"],
+  select,
+  textarea {
+    appearance: none;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    color: #0f172a;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    padding: 0.5rem 0.75rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: #0d9488;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+  }
+
+  button {
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease-in-out;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+/* Custom refined scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
-
-/* Utility classes */
-.text-navy { color: #0f172a; }
-.text-teal { color: #0d9488; }
-.bg-teal { background-color: #0d9488; }
-.border-teal { border-color: #0d9488; }
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

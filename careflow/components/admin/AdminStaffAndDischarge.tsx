@@ -4,268 +4,393 @@ import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import type { Patient, StaffMember } from '@/types';
 import {
-  CheckCircle2, Clock, AlertTriangle, UserPlus, Power, PowerOff,
-  ChevronDown, ChevronUp, X, Users, ClipboardCheck
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  UserPlus,
+  Power,
+  PowerOff,
+  UserCheck,
+  Award,
+  Users,
+  HeartCrack,
+  X,
+  Phone,
+  Shield,
+  Stethoscope,
+  HeartPulse,
 } from 'lucide-react';
-import { cn, formatDateTime, generateId } from '@/lib/utils';
+import { cn, formatDateTime } from '@/lib/utils';
 
-type TabId = 'staff' | 'discharge' | 'death';
+type TabType = 'staff' | 'discharge' | 'death';
 
 export default function AdminStaffAndDischarge() {
-  const [activeTab, setActiveTab] = useState<TabId>('staff');
-  const { state, executeDischarge, confirmDeath, addNotification } = useApp();
+  const [activeTab, setActiveTab] = useState<TabType>('staff');
+  const { state } = useApp();
 
   const approvedDischarges = state.patients.filter((p) => p.status === 'discharge_approved');
   const declaredDeaths = state.patients.filter((p) => p.status === 'death_declared');
 
-  const tabs: { id: TabId; label: string; count?: number }[] = [
-    { id: 'staff', label: 'Staff Management' },
-    { id: 'discharge', label: 'Discharge Queue', count: approvedDischarges.length },
-    { id: 'death', label: 'Death Confirmations', count: declaredDeaths.length },
+  const tabs: { id: TabType; label: string; count?: number; icon: React.ComponentType<{ className?: string }> }[] = [
+    { id: 'staff', label: 'Medical Staff Management', icon: Users },
+    { id: 'discharge', label: 'Discharge Execution Queue', count: approvedDischarges.length, icon: Award },
+    { id: 'death', label: 'Death Confirmations', count: declaredDeaths.length, icon: HeartCrack },
   ];
 
   return (
-    <div className="p-6">
-      {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-slate-100 p-1 rounded-xl w-fit">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            className={cn(
-              'px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors',
-              activeTab === t.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
-            )}
-          >
-            {t.label}
-            {t.count !== undefined && t.count > 0 && (
-              <span className="bg-teal-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                {t.count}
-              </span>
-            )}
-          </button>
-        ))}
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Modern Tabs Bar */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-1.5 shadow-2xs flex flex-wrap gap-1.5 w-fit">
+        {tabs.map((t) => {
+          const Icon = t.icon;
+          const isActive = activeTab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={cn(
+                'px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all',
+                isActive
+                  ? 'bg-slate-900 text-white shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              )}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{t.label}</span>
+              {t.count !== undefined && t.count > 0 && (
+                <span
+                  className={cn(
+                    'px-1.5 py-0.2 text-[10px] font-bold rounded-full',
+                    isActive ? 'bg-teal-500 text-white' : 'bg-teal-100 text-teal-800'
+                  )}
+                >
+                  {t.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {activeTab === 'staff' && <StaffManagement />}
-      {activeTab === 'discharge' && <DischargeQueue patients={approvedDischarges} />}
-      {activeTab === 'death' && <DeathConfirmations patients={declaredDeaths} />}
+      {/* Tab Panels */}
+      {activeTab === 'staff' && <StaffManagementPanel />}
+      {activeTab === 'discharge' && <DischargeQueuePanel patients={approvedDischarges} />}
+      {activeTab === 'death' && <DeathConfirmationsPanel patients={declaredDeaths} />}
     </div>
   );
 }
 
-// ---- Staff Management ----
+// ============================================================
+// 1. STAFF MANAGEMENT PANEL
+// ============================================================
 
-function StaffManagement() {
+function StaffManagementPanel() {
   const { state, addStaff, deactivateStaff, activateStaff, addNotification } = useApp();
-  const [showAdd, setShowAdd] = useState(false);
+  const [showAddStaffModal, setShowAddStaffModal] = useState(false);
   const [roleFilter, setRoleFilter] = useState<'all' | 'nurse' | 'doctor'>('all');
-  const [blockInfo, setBlockInfo] = useState<{ staffId: string; patients: Patient[] } | null>(null);
+  const [blockedDeactivation, setBlockedDeactivation] = useState<{
+    staffMember: StaffMember;
+    patients: Patient[];
+  } | null>(null);
 
-  const staff = state.staff.filter(
+  const filteredStaff = state.staff.filter(
     (s) => roleFilter === 'all' || s.role === roleFilter
   );
 
-  function handleDeactivate(s: StaffMember) {
-    const result = deactivateStaff(s.id);
-    if (!result.success) {
-      setBlockInfo({ staffId: s.id, patients: result.blockedBy });
+  function handleToggleStatus(s: StaffMember) {
+    if (s.active) {
+      const result = deactivateStaff(s.id);
+      if (!result.success) {
+        setBlockedDeactivation({
+          staffMember: s,
+          patients: result.blockedBy,
+        });
+      } else {
+        addNotification({
+          type: 'success',
+          title: 'Staff Member Deactivated',
+          message: `${s.name} (${s.role}) has been marked inactive.`,
+        });
+      }
     } else {
-      addNotification({ type: 'success', title: 'Staff deactivated', message: `${s.name} has been deactivated.` });
+      activateStaff(s.id);
+      addNotification({
+        type: 'success',
+        title: 'Staff Member Activated',
+        message: `${s.name} is now active and eligible for patient assignment.`,
+      });
     }
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex gap-2">
-          {(['all', 'nurse', 'doctor'] as const).map((r) => (
+    <div className="space-y-4">
+      {/* Top Filter and Add Staff Button */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/70">
+          {(
+            [
+              { id: 'all', label: `All Staff (${state.staff.length})` },
+              { id: 'doctor', label: `Physicians (${state.staff.filter((s) => s.role === 'doctor').length})` },
+              { id: 'nurse', label: `Nurses (${state.staff.filter((s) => s.role === 'nurse').length})` },
+            ] as const
+          ).map((t) => (
             <button
-              key={r}
-              onClick={() => setRoleFilter(r)}
+              key={t.id}
+              onClick={() => setRoleFilter(t.id)}
               className={cn(
-                'px-3 py-1.5 text-sm rounded-lg capitalize',
-                roleFilter === r ? 'bg-teal-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all',
+                roleFilter === t.id ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-600 hover:text-slate-900'
               )}
             >
-              {r === 'all' ? 'All Staff' : r === 'nurse' ? 'Nurses' : 'Doctors'}
+              {t.label}
             </button>
           ))}
         </div>
+
         <button
-          onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700"
+          onClick={() => setShowAddStaffModal(true)}
+          className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition-colors"
         >
-          <UserPlus className="w-4 h-4" />
-          Add Staff
+          <UserPlus className="w-3.5 h-3.5" />
+          <span>Add Medical Staff</span>
         </button>
       </div>
 
-      {blockInfo && (
-        <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-semibold text-amber-800 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" /> Deactivation blocked
-              </p>
-              <p className="text-xs text-amber-700 mt-1">
-                This staff member is assigned to active patients:
-              </p>
-              <ul className="mt-2 space-y-1">
-                {blockInfo.patients.map((p) => (
-                  <li key={p.id} className="text-xs text-amber-700">
-                    • {p.name} (Bed {p.bedNumber}, {p.id})
-                  </li>
-                ))}
-              </ul>
+      {/* Deactivation Blocked Alert Banner */}
+      {blockedDeactivation && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl shadow-2xs">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-xs text-amber-900">
+                  Deactivation Blocked — Active Patient Assignments Exist
+                </p>
+                <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                  <strong>{blockedDeactivation.staffMember.name}</strong> cannot be deactivated while actively assigned to patients. Reassign the following {blockedDeactivation.patients.length} patient(s) first:
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {blockedDeactivation.patients.map((p) => (
+                    <span
+                      key={p.id}
+                      className="px-2.5 py-1 bg-white border border-amber-300 rounded-lg text-[11px] font-semibold text-amber-900 shadow-2xs"
+                    >
+                      {p.name} (Bed {p.bedNumber} · {p.id})
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
-            <button onClick={() => setBlockInfo(null)} className="text-amber-600">
+            <button
+              onClick={() => setBlockedDeactivation(null)}
+              className="text-amber-500 hover:text-amber-800 p-1"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
+      {/* Staff Table */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden">
+        <table className="w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="border-b border-slate-100 bg-slate-50">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Staff</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">ID</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Phone</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Role</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Status</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase">Actions</th>
+            <tr className="bg-slate-50/70 border-b border-slate-200/80 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              <th className="py-3 px-4">Staff Member</th>
+              <th className="py-3 px-3">Role</th>
+              <th className="py-3 px-3">ID Code</th>
+              <th className="py-3 px-3">Phone</th>
+              <th className="py-3 px-3">Active Patients</th>
+              <th className="py-3 px-3">Status</th>
+              <th className="py-3 px-4 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
-            {staff.map((s) => (
-              <tr key={s.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-900">{s.name}</td>
-                <td className="px-4 py-3 text-slate-400 text-xs font-mono">{s.id}</td>
-                <td className="px-4 py-3 text-slate-600">{s.phone}</td>
-                <td className="px-4 py-3 capitalize">
-                  <span className={cn(
-                    'text-xs px-2 py-0.5 rounded-full font-medium',
-                    s.role === 'nurse' ? 'bg-rose-100 text-rose-700' : 'bg-teal-100 text-teal-700'
-                  )}>
-                    {s.role}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  {s.active ? (
-                    <span className="flex items-center gap-1 text-xs text-green-700">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Active
+          <tbody className="divide-y divide-slate-100">
+            {filteredStaff.map((staff) => {
+              const activeAssignments = state.patients.filter(
+                (p) =>
+                  (p.doctorId === staff.id || p.nurseId === staff.id) &&
+                  p.status !== 'discharged' &&
+                  p.status !== 'death_confirmed'
+              );
+
+              return (
+                <tr key={staff.id} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="py-3 px-4">
+                    <p className="font-bold text-slate-900">{staff.name}</p>
+                    <p className="text-[11px] text-slate-400 capitalize">{staff.role}</p>
+                  </td>
+                  <td className="py-3 px-3">
+                    <span
+                      className={cn(
+                        'px-2 py-0.5 rounded-full text-[10px] font-bold border capitalize inline-flex items-center gap-1',
+                        staff.role === 'doctor'
+                          ? 'bg-teal-50 text-teal-800 border-teal-200'
+                          : 'bg-rose-50 text-rose-800 border-rose-200'
+                      )}
+                    >
+                      {staff.role === 'doctor' ? (
+                        <Stethoscope className="w-3 h-3 text-teal-600" />
+                      ) : (
+                        <HeartPulse className="w-3 h-3 text-rose-600" />
+                      )}
+                      {staff.role}
                     </span>
-                  ) : (
-                    <span className="text-xs text-slate-400">Inactive</span>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  {s.active ? (
-                    <button
-                      onClick={() => handleDeactivate(s)}
-                      className="flex items-center gap-1 text-xs text-red-600 hover:text-red-800"
-                    >
-                      <PowerOff className="w-3 h-3" /> Deactivate
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => activateStaff(s.id)}
-                      className="flex items-center gap-1 text-xs text-teal-600 hover:text-teal-800"
-                    >
-                      <Power className="w-3 h-3" /> Activate
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="py-3 px-3 font-mono text-slate-400 text-[11px]">{staff.id}</td>
+                  <td className="py-3 px-3 font-mono text-slate-600">{staff.phone}</td>
+                  <td className="py-3 px-3">
+                    <span className="font-bold text-slate-800">{activeAssignments.length}</span>
+                    <span className="text-slate-400 text-[11px]"> patient(s)</span>
+                  </td>
+                  <td className="py-3 px-3">
+                    {staff.active ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        <CheckCircle2 className="w-3 h-3" /> Active
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                        Inactive
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    {staff.active ? (
+                      <button
+                        onClick={() => handleToggleStatus(staff)}
+                        className="px-2.5 py-1 text-xs font-semibold text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200 inline-flex items-center gap-1"
+                      >
+                        <PowerOff className="w-3 h-3" /> Deactivate
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleToggleStatus(staff)}
+                        className="px-2.5 py-1 text-xs font-semibold text-teal-700 hover:text-teal-900 hover:bg-teal-50 rounded-lg transition-colors border border-transparent hover:border-teal-200 inline-flex items-center gap-1"
+                      >
+                        <Power className="w-3 h-3" /> Activate
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      {showAdd && <AddStaffModal onClose={() => setShowAdd(false)} />}
+      {showAddStaffModal && (
+        <AddStaffModal
+          onClose={() => setShowAddStaffModal(false)}
+          onSuccess={() => setShowAddStaffModal(false)}
+        />
+      )}
     </div>
   );
 }
 
-// ---- Discharge Queue ----
+// ============================================================
+// 2. DISCHARGE EXECUTION QUEUE PANEL
+// ============================================================
 
-function DischargeQueue({ patients }: { patients: Patient[] }) {
+function DischargeQueuePanel({ patients }: { patients: Patient[] }) {
   const { executeDischarge, addNotification } = useApp();
-  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
-  function handleExecute(p: Patient) {
-    if (confirmId !== p.id) {
-      setConfirmId(p.id);
-      return;
-    }
+  function handleConfirmExecution(p: Patient) {
     executeDischarge(p.id);
     addNotification({
       type: 'success',
-      title: 'Discharge executed',
-      message: `${p.name} has been discharged. Bed ${p.bedNumber} is now free.`,
+      title: 'Discharge Executed',
+      message: `${p.name} discharged. Bed ${p.bedNumber} has been freed and record locked.`,
       patientId: p.id,
     });
-    setConfirmId(null);
+    setConfirmingId(null);
   }
 
   if (patients.length === 0) {
     return (
-      <div className="text-center py-16 text-slate-400">
-        <ClipboardCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
-        <p className="text-sm">No discharges awaiting execution</p>
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center text-slate-400 shadow-2xs">
+        <Award className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+        <p className="font-semibold text-slate-600 text-sm">Discharge Queue Empty</p>
+        <p className="text-xs text-slate-400 mt-1">
+          No patients are currently awaiting administrative discharge execution.
+        </p>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      {patients.map((p) => {
-        const elapsed = p.dischargeApprovedAt
-          ? ((Date.now() - new Date(p.dischargeApprovedAt).getTime()) / 3_600_000).toFixed(1)
+      {patients.map((patient) => {
+        const approvedAt = patient.dischargeApprovedAt ? new Date(patient.dischargeApprovedAt) : null;
+        const elapsedHours = approvedAt
+          ? Math.max(0, ((Date.now() - approvedAt.getTime()) / 3_600_000)).toFixed(1)
           : null;
-        const isConfirming = confirmId === p.id;
+
+        const isConfirming = confirmingId === patient.id;
+
         return (
-          <div key={p.id} className="bg-white border border-slate-200 rounded-xl p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-semibold text-slate-900">{p.name}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{p.id} · Bed {p.bedNumber}</p>
-                <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-500">
-                  <span>Doctor: {p.doctorName}</span>
-                  {p.dischargeApprovedAt && (
-                    <span>Approved: {formatDateTime(p.dischargeApprovedAt)}</span>
-                  )}
-                  {elapsed && <span className="text-amber-600">{elapsed}h elapsed</span>}
-                </div>
+          <div
+            key={patient.id}
+            className="bg-white border border-teal-200/90 rounded-2xl p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4"
+          >
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-md font-mono font-bold text-xs bg-slate-900 text-white">
+                  Bed {patient.bedNumber}
+                </span>
+                <h3 className="font-bold text-slate-900 text-sm">{patient.name}</h3>
+                <span className="font-mono text-xs text-slate-400">({patient.id})</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
+                  Doctor Approved
+                </span>
               </div>
-              <div className="flex-shrink-0">
-                {isConfirming ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-amber-700">Confirm discharge?</span>
-                    <button
-                      onClick={() => handleExecute(p)}
-                      className="text-xs bg-teal-600 text-white px-3 py-1.5 rounded-lg hover:bg-teal-700"
-                    >
-                      Confirm
-                    </button>
-                    <button
-                      onClick={() => setConfirmId(null)}
-                      className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded-lg"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => handleExecute(p)}
-                    className="text-sm bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700"
-                  >
-                    Execute Discharge
-                  </button>
+
+              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 mt-2">
+                <span>
+                  Approving Physician: <strong>{patient.dischargeApprovedByName || patient.doctorName}</strong>
+                </span>
+                {patient.dischargeApprovedAt && (
+                  <span>
+                    Approved At: <strong>{formatDateTime(patient.dischargeApprovedAt)}</strong>
+                  </span>
+                )}
+                {elapsedHours && (
+                  <span className="text-amber-700 font-semibold flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> {elapsedHours} hours elapsed
+                  </span>
                 )}
               </div>
+            </div>
+
+            <div className="flex-shrink-0">
+              {isConfirming ? (
+                <div className="flex items-center gap-2 bg-teal-50 border border-teal-200 p-2 rounded-xl">
+                  <span className="text-xs font-semibold text-teal-900">
+                    Confirm Bed {patient.bedNumber} Release?
+                  </span>
+                  <button
+                    onClick={() => handleConfirmExecution(patient)}
+                    className="px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-lg shadow-xs"
+                  >
+                    Confirm
+                  </button>
+                  <button
+                    onClick={() => setConfirmingId(null)}
+                    className="px-2.5 py-1 bg-white border border-slate-300 text-slate-600 text-xs rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmingId(patient.id)}
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-colors"
+                >
+                  <Award className="w-3.5 h-3.5" />
+                  <span>Execute Discharge</span>
+                </button>
+              )}
             </div>
           </div>
         );
@@ -274,82 +399,105 @@ function DischargeQueue({ patients }: { patients: Patient[] }) {
   );
 }
 
-// ---- Death Confirmations ----
+// ============================================================
+// 3. DEATH CONFIRMATIONS PANEL
+// ============================================================
 
-function DeathConfirmations({ patients }: { patients: Patient[] }) {
+function DeathConfirmationsPanel({ patients }: { patients: Patient[] }) {
   const { confirmDeath, addNotification } = useApp();
-  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
-  function handleConfirm(p: Patient) {
-    if (confirmId !== p.id) {
-      setConfirmId(p.id);
-      return;
-    }
+  function handleConfirmDeath(p: Patient) {
     confirmDeath(p.id);
     addNotification({
       type: 'info',
-      title: 'Death confirmed',
-      message: `${p.name}'s death has been confirmed. Bed ${p.bedNumber} is now free.`,
+      title: 'Death Confirmed by Admin',
+      message: `${p.name}'s death confirmed. Bed ${p.bedNumber} freed and record permanently locked.`,
       patientId: p.id,
     });
-    setConfirmId(null);
+    setConfirmingId(null);
   }
 
   if (patients.length === 0) {
     return (
-      <div className="text-center py-16 text-slate-400">
-        <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
-        <p className="text-sm">No pending death confirmations</p>
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-12 text-center text-slate-400 shadow-2xs">
+        <HeartCrack className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+        <p className="font-semibold text-slate-600 text-sm">No Pending Death Declarations</p>
+        <p className="text-xs text-slate-400 mt-1">
+          All deceased declarations have been processed and confirmed.
+        </p>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      {patients.map((p) => {
-        const isConfirming = confirmId === p.id;
+      {patients.map((patient) => {
+        const isConfirming = confirmingId === patient.id;
+
         return (
-          <div key={p.id} className="bg-white border border-orange-200 rounded-xl p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-semibold text-slate-900">{p.name}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{p.id} · Bed {p.bedNumber}</p>
-                <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-500">
-                  <span>Declared by: {p.deathDeclaredByName}</span>
-                  {p.deathDeclaredAt && <span>{formatDateTime(p.deathDeclaredAt)}</span>}
-                </div>
-                {p.deathNote && (
-                  <p className="mt-2 text-xs text-slate-600 italic border-l-2 border-orange-300 pl-2">
-                    "{p.deathNote}"
-                  </p>
+          <div
+            key={patient.id}
+            className="bg-white border-2 border-red-200 rounded-2xl p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4"
+          >
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-md font-mono font-bold text-xs bg-red-600 text-white">
+                  Bed {patient.bedNumber}
+                </span>
+                <h3 className="font-bold text-slate-900 text-sm">{patient.name}</h3>
+                <span className="font-mono text-xs text-slate-400">({patient.id})</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
+                  Doctor Declared Death
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 mt-2">
+                <span>
+                  Declaring Physician: <strong>{patient.deathDeclaredByName || patient.doctorName}</strong>
+                </span>
+                {patient.deathDeclaredAt && (
+                  <span>
+                    Declaration Time: <strong>{formatDateTime(patient.deathDeclaredAt)}</strong>
+                  </span>
                 )}
               </div>
-              <div className="flex-shrink-0">
-                {isConfirming ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-red-700">Confirm death? Bed will be freed.</span>
-                    <button
-                      onClick={() => handleConfirm(p)}
-                      className="text-xs bg-red-600 text-white px-3 py-1.5 rounded-lg hover:bg-red-700"
-                    >
-                      Confirm
-                    </button>
-                    <button
-                      onClick={() => setConfirmId(null)}
-                      className="text-xs bg-slate-200 text-slate-700 px-2 py-1.5 rounded-lg"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
+
+              {patient.deathNote && (
+                <div className="mt-2.5 p-2.5 bg-red-50/50 border border-red-100 rounded-xl text-xs text-red-900 italic">
+                  "{patient.deathNote}"
+                </div>
+              )}
+            </div>
+
+            <div className="flex-shrink-0">
+              {isConfirming ? (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 p-2 rounded-xl">
+                  <span className="text-xs font-semibold text-red-900">
+                    Confirm death and free Bed {patient.bedNumber}?
+                  </span>
                   <button
-                    onClick={() => handleConfirm(p)}
-                    className="text-sm bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+                    onClick={() => handleConfirmDeath(patient)}
+                    className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg shadow-xs"
                   >
                     Confirm Death
                   </button>
-                )}
-              </div>
+                  <button
+                    onClick={() => setConfirmingId(null)}
+                    className="px-2.5 py-1 bg-white border border-slate-300 text-slate-600 text-xs rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmingId(patient.id)}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-colors"
+                >
+                  <HeartCrack className="w-3.5 h-3.5" />
+                  <span>Confirm Death & Free Bed</span>
+                </button>
+              )}
             </div>
           </div>
         );
@@ -358,85 +506,137 @@ function DeathConfirmations({ patients }: { patients: Patient[] }) {
   );
 }
 
-// ---- Add Staff Modal ----
+// ============================================================
+// ADD MEDICAL STAFF MODAL
+// ============================================================
 
-function AddStaffModal({ onClose }: { onClose: () => void }) {
+function AddStaffModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const { state, addStaff, addNotification } = useApp();
-  const [form, setForm] = useState({ name: '', phone: '', role: 'nurse' as 'nurse' | 'doctor' });
+  const [form, setForm] = useState({
+    name: '',
+    phone: '',
+    role: 'nurse' as 'nurse' | 'doctor',
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const nameRe = /^[A-Za-zÀ-ÖØ-öø-ÿ\s''.-]{2,60}$/;
-  const phoneRe = /^\d{10}$/;
+  const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ\s''.-]{2,60}$/;
+  const phoneRegex = /^\d{10}$/;
 
   function validate() {
-    const e: Record<string, string> = {};
-    if (!form.name.trim()) e.name = 'Name is required';
-    else if (!nameRe.test(form.name.trim())) e.name = 'Name: 2–60 characters, letters only';
+    const errs: Record<string, string> = {};
 
-    if (!form.phone) e.phone = 'Phone is required';
-    else if (!phoneRe.test(form.phone)) e.phone = 'Phone must be exactly 10 digits';
-    else if (state.staff.some((s) => s.phone === form.phone))
-      e.phone = 'This phone number is already registered to another staff member';
+    if (!form.name.trim()) {
+      errs.name = 'Staff name is required.';
+    } else if (!nameRegex.test(form.name.trim())) {
+      errs.name = 'Name must be 2–60 characters (letters only).';
+    }
 
-    setErrors(e);
-    return Object.keys(e).length === 0;
+    if (!form.phone.trim()) {
+      errs.phone = 'Phone number is required.';
+    } else if (!phoneRegex.test(form.phone.trim())) {
+      errs.phone = 'Phone must contain exactly 10 digits.';
+    } else if (state.staff.some((s) => s.phone === form.phone.trim())) {
+      errs.phone = 'This phone number is already registered to another staff member.';
+    }
+
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
   }
 
   function handleSubmit() {
     if (!validate()) return;
-    const staff = addStaff({ name: form.name.trim(), phone: form.phone, role: form.role, active: true });
-    addNotification({ type: 'success', title: 'Staff added', message: `${staff.name} (${staff.id}) added as ${staff.role}.` });
-    onClose();
+
+    const newStaff = addStaff({
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+      role: form.role,
+      active: true,
+    });
+
+    addNotification({
+      type: 'success',
+      title: 'Medical Staff Added',
+      message: `${newStaff.name} registered as active ${newStaff.role} (${newStaff.id}).`,
+    });
+
+    onSuccess();
   }
 
-  const inputCls = (err?: string) =>
-    cn('w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400',
-      err ? 'border-red-400 bg-red-50' : 'border-slate-200');
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-slate-900">Add Staff Member</h3>
-          <button onClick={onClose}><X className="w-4 h-4 text-slate-500" /></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+          <h3 className="font-bold text-base">Add Medical Staff Member</h3>
+          <button onClick={onClose} className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white">
+            <X className="w-5 h-5" />
+          </button>
         </div>
-        <div className="space-y-4">
+
+        <div className="p-6 space-y-4 text-xs">
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Full Name *</label>
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+              Full Name *
+            </label>
             <input
               type="text"
-              className={inputCls(errors.name)}
+              placeholder="e.g. Dr. Kavitha Reddy"
               value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, name: e.target.value }));
+                if (errors.name) setErrors((e) => ({ ...e, name: '' }));
+              }}
+              className="w-full text-xs rounded-xl px-3 py-2 border border-slate-300"
             />
-            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+            {errors.name && <p className="text-xs text-red-600 mt-1 font-medium">{errors.name}</p>}
           </div>
+
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Phone (10 digits) *</label>
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+              Phone Number (10 digits) *
+            </label>
             <input
               type="tel"
               maxLength={10}
-              className={inputCls(errors.phone)}
+              placeholder="10-digit mobile number"
               value={form.phone}
-              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value.replace(/\D/g, '') }))}
+              onChange={(e) => {
+                const cleaned = e.target.value.replace(/\D/g, '');
+                setForm((f) => ({ ...f, phone: cleaned }));
+                if (errors.phone) setErrors((e) => ({ ...e, phone: '' }));
+              }}
+              className="w-full text-xs rounded-xl px-3 py-2 border border-slate-300 font-mono"
             />
-            {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
+            {errors.phone && <p className="text-xs text-red-600 mt-1 font-medium">{errors.phone}</p>}
           </div>
+
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">Role *</label>
+            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+              Clinical Role *
+            </label>
             <select
-              className={inputCls()}
               value={form.role}
               onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as 'nurse' | 'doctor' }))}
+              className="w-full text-xs rounded-xl px-3 py-2.5 border border-slate-300 bg-white cursor-pointer"
             >
-              <option value="nurse">Nurse</option>
-              <option value="doctor">Doctor</option>
+              <option value="nurse">Staff Nurse</option>
+              <option value="doctor">Attending Physician</option>
             </select>
           </div>
         </div>
-        <div className="flex justify-end gap-3 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
-          <button onClick={handleSubmit} className="px-4 py-2 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700">Add Staff</button>
+
+        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200/80 flex items-center justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="px-5 py-2 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-xs"
+          >
+            Add Staff Member
+          </button>
         </div>
       </div>
     </div>

@@ -4,28 +4,51 @@ import { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import type { Patient, TemperatureReading, Treatment, DoctorVisit } from '@/types';
 import {
-  Stethoscope, AlertCircle, AlertTriangle, CheckCircle, Clock,
-  Calendar, Activity, User, Plus, Edit2, Check, X, ShieldAlert,
-  Flame, Award, ArrowRight, TrendingUp, HeartCrack, Undo2
+  Stethoscope,
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  User,
+  Plus,
+  Edit2,
+  Check,
+  X,
+  ShieldAlert,
+  Flame,
+  Award,
+  ArrowRight,
+  TrendingUp,
+  HeartCrack,
+  Undo2,
+  Calendar,
+  Building2,
+  Activity,
+  FileText,
 } from 'lucide-react';
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  ReferenceLine, CartesianGrid
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+  CartesianGrid,
 } from 'recharts';
 import { cn, formatDateTime, formatTime, today, calcAge } from '@/lib/utils';
 import {
-  readingsForDate, effectiveReadingForDate, isFever, isCritical,
-  hasTempToday, hasVisitToday, visitForDate, FEVER_THRESHOLD,
-  CRITICAL_FEVER_THRESHOLD
+  readingsForDate,
+  effectiveReadingForDate,
+  isFever,
+  isCritical,
+  hasTempToday,
+  hasVisitToday,
+  visitForDate,
+  FEVER_THRESHOLD,
+  CRITICAL_FEVER_THRESHOLD,
 } from '@/lib/business';
 
-// Priority sorting tiers as specified:
-// 1. Critical fever (>= 39.5°C today)
-// 2. Fever (>= 38.0°C today)
-// 3. Eligible for discharge
-// 4. Temperature pending
-// 5. Visit pending
-// 6. Completed patients
 function getDoctorPriorityTier(
   p: Patient,
   readings: TemperatureReading[],
@@ -45,18 +68,16 @@ function getDoctorPriorityTier(
 }
 
 export default function DoctorWorklist() {
-  const {
-    state,
-    currentUser,
-    markCriticalAlertSeen,
-  } = useApp();
+  const { state, currentUser, markCriticalAlertSeen } = useApp();
 
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [filter, setFilter] = useState<'all' | 'critical' | 'fever' | 'eligible' | 'pendingVisit'>('all');
   const [search, setSearch] = useState('');
 
   const todayStr = today();
-  const doctorId = currentUser?.staffId || state.staff.find(s => s.role === 'doctor' && s.name === currentUser?.name)?.id;
+  const doctorId =
+    currentUser?.staffId ||
+    state.staff.find((s) => s.role === 'doctor' && s.name === currentUser?.name)?.id;
   const doctorName = currentUser?.name || 'Dr. Arjun Mehta';
 
   // Active assigned patients
@@ -72,8 +93,8 @@ export default function DoctorWorklist() {
   const sortedPatients = useMemo(() => {
     let list = [...assignedPatients];
 
-    if (search) {
-      const q = search.toLowerCase();
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
       list = list.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
@@ -106,7 +127,6 @@ export default function DoctorWorklist() {
     });
   }, [assignedPatients, state.temperatureReadings, state.doctorVisits, search, filter, todayStr]);
 
-  // Overall statistics
   const totalCount = assignedPatients.length;
   const measuredCount = assignedPatients.filter((p) =>
     hasTempToday(state.temperatureReadings, p.id)
@@ -115,7 +135,6 @@ export default function DoctorWorklist() {
     hasVisitToday(state.doctorVisits, p.id)
   ).length;
 
-  // Unseen critical fever patients for persistent banner
   const unseenCriticalPatients = assignedPatients.filter((p) => {
     const eff = effectiveReadingForDate(state.temperatureReadings, p.id, todayStr);
     return eff && isCritical(eff.value) && p.criticalFeverAlertSeen !== true;
@@ -123,26 +142,25 @@ export default function DoctorWorklist() {
 
   function handleOpenPatient(patient: Patient) {
     markCriticalAlertSeen(patient.id);
-    // Find freshest record
     const fresh = state.patients.find((p) => p.id === patient.id) || patient;
     setSelectedPatient(fresh);
   }
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* PERSISTENT CRITICAL FEVER BANNER */}
+      {/* PERSISTENT CRITICAL FEVER ALERT BANNER */}
       {unseenCriticalPatients.length > 0 && (
-        <div className="bg-red-600 text-white rounded-2xl p-4 shadow-lg flex items-center justify-between gap-4 animate-pulse">
+        <div className="bg-red-600 text-white rounded-2xl p-4 shadow-md flex items-center justify-between gap-4 animate-in fade-in">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
               <ShieldAlert className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="font-bold text-sm tracking-wide uppercase">
-                URGENT CRITICAL FEVER ALERT ({unseenCriticalPatients.length} patient{unseenCriticalPatients.length > 1 ? 's' : ''})
+              <p className="font-bold text-xs uppercase tracking-wider">
+                URGENT CRITICAL FEVER ALERT — IMMEDIATE CLINICAL ACTION REQUIRED ({unseenCriticalPatients.length})
               </p>
               <p className="text-xs text-red-100 mt-0.5">
-                Immediate clinical review required for:{' '}
+                Critical temperature (≥39.5°C) recorded today for:{' '}
                 {unseenCriticalPatients.map((p) => `${p.name} (Bed ${p.bedNumber})`).join(', ')}.
               </p>
             </div>
@@ -151,79 +169,79 @@ export default function DoctorWorklist() {
             onClick={() => handleOpenPatient(unseenCriticalPatients[0])}
             className="px-4 py-2 bg-white text-red-700 hover:bg-red-50 text-xs font-bold rounded-xl whitespace-nowrap shadow-xs transition-colors"
           >
-            Open First Case
+            Review Case File
           </button>
         </div>
       )}
 
-      {/* Header & Stats Banner */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+      {/* Rounds Status Header */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-100 text-teal-800 uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-50 text-teal-800 border border-teal-200 uppercase tracking-wider">
                 Physician Station
               </span>
-              <span className="text-xs text-slate-500">CareFlow Isolation Ward</span>
+              <span className="text-xs text-slate-500 font-medium">CareFlow Isolation Ward</span>
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mt-1">
-              Doctor Patient Worklist
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight mt-1">
+              Physician Rounds & Clinical Worklist
             </h2>
-            <p className="text-sm text-slate-500 mt-0.5">
-              Assigned Physician: <span className="font-semibold text-slate-800">{doctorName}</span> · Prioritized by clinical acuity.
+            <p className="text-xs text-slate-500 mt-0.5">
+              Attending Physician: <strong className="text-slate-800">{doctorName}</strong> · Triage sorted by clinical acuity.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             {/* Measured Counter */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 min-w-[140px] text-center">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase block">Temperature</span>
-              <span className="text-lg font-bold text-slate-900">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 min-w-[130px] text-center">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Temperature</span>
+              <span className="text-lg font-bold text-slate-900 mt-0.5 block">
                 {measuredCount} / {totalCount}
               </span>
-              <span className="text-[10px] text-teal-600 font-medium block mt-0.5">
-                {totalCount ? Math.round((measuredCount / totalCount) * 100) : 0}% measured
+              <span className="text-[10px] text-teal-700 font-semibold block mt-0.5">
+                {totalCount ? Math.round((measuredCount / totalCount) * 100) : 0}% Measured
               </span>
             </div>
 
             {/* Visited Counter */}
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 min-w-[140px] text-center">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase block">Doctor Visits</span>
-              <span className="text-lg font-bold text-slate-900">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 min-w-[130px] text-center">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Doctor Visits</span>
+              <span className="text-lg font-bold text-slate-900 mt-0.5 block">
                 {visitedCount} / {totalCount}
               </span>
-              <span className="text-[10px] text-teal-600 font-medium block mt-0.5">
-                {totalCount ? Math.round((visitedCount / totalCount) * 100) : 0}% visited
+              <span className="text-[10px] text-teal-700 font-semibold block mt-0.5">
+                {totalCount ? Math.round((visitedCount / totalCount) * 100) : 0}% Completed
               </span>
             </div>
           </div>
         </div>
 
-        {/* Priority legend */}
-        <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
-          <span className="font-semibold text-slate-700">Triage Order:</span>
-          <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded font-medium">1. Critical Fever (≥39.5°C)</span>
-          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded font-medium">2. Fever (≥38.0°C)</span>
-          <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded font-medium">3. Discharge Eligible</span>
-          <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-medium">4. Temp Pending</span>
-          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded font-medium">5. Visit Pending</span>
-          <span className="px-2 py-0.5 bg-slate-50 text-slate-500 rounded font-medium">6. Completed</span>
+        {/* Triage Priority Legend */}
+        <div className="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+          <span className="font-bold text-slate-700">Triage Priority:</span>
+          <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded-md font-semibold">1. Critical (≥39.5°C)</span>
+          <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-md font-semibold">2. Fever (≥38.0°C)</span>
+          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md font-semibold">3. Eligible</span>
+          <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-semibold">4. Temp Pending</span>
+          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-md font-semibold">5. Visit Pending</span>
+          <span className="px-2 py-0.5 bg-slate-50 text-slate-500 rounded-md font-semibold">6. Completed</span>
         </div>
       </div>
 
-      {/* Search & Filter Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="relative w-full sm:w-80">
+      {/* Control Bar: Search & Acuity Filter Pills */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="relative max-w-sm flex-1">
           <input
             type="text"
-            placeholder="Search patient, bed, or ID…"
+            placeholder="Search patient, bed number, or ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
+            className="w-full pl-4 pr-4 py-2 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white"
           />
         </div>
 
-        <div className="flex items-center gap-1.5 bg-white border border-slate-200 p-1 rounded-lg w-full sm:w-auto overflow-x-auto">
+        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200/70 overflow-x-auto">
           {[
             { id: 'all', label: `All (${totalCount})` },
             { id: 'critical', label: 'Critical Fever' },
@@ -235,10 +253,10 @@ export default function DoctorWorklist() {
               key={tab.id}
               onClick={() => setFilter(tab.id as typeof filter)}
               className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap',
+                'px-3 py-1.5 text-xs font-semibold rounded-lg transition-all whitespace-nowrap',
                 filter === tab.id
-                  ? 'bg-teal-600 text-white'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
               )}
             >
               {tab.label}
@@ -247,13 +265,13 @@ export default function DoctorWorklist() {
         </div>
       </div>
 
-      {/* Patient Cards */}
+      {/* Patient Priority Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {sortedPatients.length === 0 ? (
-          <div className="col-span-full py-16 text-center bg-white border border-slate-200 rounded-2xl">
+          <div className="col-span-full py-16 text-center bg-white border border-slate-200/80 rounded-2xl shadow-2xs">
             <User className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-            <p className="text-sm font-medium text-slate-700">No matching patients</p>
-            <p className="text-xs text-slate-400 mt-1">Try resetting your search or filter parameters</p>
+            <p className="font-semibold text-slate-700 text-sm">No matching patients</p>
+            <p className="text-xs text-slate-400 mt-1">Try resetting your filter parameters.</p>
           </div>
         ) : (
           sortedPatients.map((patient) => {
@@ -268,21 +286,21 @@ export default function DoctorWorklist() {
               <div
                 key={patient.id}
                 className={cn(
-                  'bg-white rounded-2xl border transition-all duration-200 p-5 flex flex-col justify-between shadow-xs',
+                  'bg-white rounded-2xl border transition-all duration-200 p-5 flex flex-col justify-between shadow-2xs',
                   critical
-                    ? 'border-red-400 bg-red-50/20 shadow-red-500/5'
+                    ? 'border-red-300 bg-red-50/20'
                     : fever
-                    ? 'border-amber-400 bg-amber-50/20'
+                    ? 'border-amber-300 bg-amber-50/20'
                     : isEligible
                     ? 'border-emerald-300 bg-emerald-50/10'
-                    : 'border-slate-200 hover:border-slate-300'
+                    : 'border-slate-200/90'
                 )}
               >
                 <div>
-                  {/* Card Header: Bed & Status Badges */}
+                  {/* Bed Badge & Status Tags */}
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-1 bg-slate-900 text-white font-mono text-xs font-bold rounded-lg">
+                      <span className="px-2.5 py-1 bg-slate-900 text-white font-mono text-xs font-bold rounded-lg shadow-2xs">
                         Bed {patient.bedNumber}
                       </span>
                       <span className="text-xs font-mono text-slate-400">{patient.id}</span>
@@ -312,46 +330,46 @@ export default function DoctorWorklist() {
                     </div>
                   </div>
 
-                  {/* Patient Name */}
+                  {/* Name & Nurse Assignment */}
                   <div className="mb-3">
-                    <h3 className="text-base font-bold text-slate-900">{patient.name}</h3>
+                    <h3 className="text-base font-bold text-slate-900 leading-snug">{patient.name}</h3>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Nurse: <span className="text-slate-700 font-medium">{patient.nurseName}</span>
+                      Assigned Nurse: <span className="font-semibold text-slate-700">{patient.nurseName}</span>
                     </p>
                   </div>
 
-                  {/* Quick Status Pillbox */}
-                  <div className="grid grid-cols-2 gap-2 bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs mb-4">
+                  {/* Clinical Readout Box */}
+                  <div className="grid grid-cols-2 gap-2 bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 text-xs mb-4">
                     <div>
-                      <span className="text-[10px] uppercase font-semibold text-slate-400 block">Today's Temp</span>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Today's Temp</span>
                       {effReading ? (
-                        <span className="font-bold text-slate-900 text-sm mt-0.5 block">
+                        <span className="font-mono font-bold text-slate-900 text-sm mt-0.5 block">
                           {effReading.value}°C
                         </span>
                       ) : (
-                        <span className="text-amber-600 font-semibold flex items-center gap-1 mt-0.5">
+                        <span className="text-amber-700 font-semibold flex items-center gap-1 mt-0.5">
                           <Clock className="w-3 h-3" /> Not measured
                         </span>
                       )}
                     </div>
 
                     <div>
-                      <span className="text-[10px] uppercase font-semibold text-slate-400 block">Today's Visit</span>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Today's Visit</span>
                       {visit ? (
-                        <span className="text-green-700 font-semibold flex items-center gap-1 mt-0.5">
-                          <CheckCircle className="w-3.5 h-3.5" /> Done at {formatTime(visit.visitedAt)}
+                        <span className="text-emerald-700 font-semibold flex items-center gap-1 mt-0.5">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Done ({formatTime(visit.visitedAt)})
                         </span>
                       ) : (
                         <span className="text-slate-500 font-medium flex items-center gap-1 mt-0.5">
-                          <Clock className="w-3 h-3 text-slate-400" /> Pending visit
+                          <Clock className="w-3 h-3 text-slate-400" /> Due
                         </span>
                       )}
                     </div>
 
                     <div className="col-span-2 pt-2 border-t border-slate-200 flex items-center justify-between text-[11px]">
-                      <span className="text-slate-500">Fever-free streak:</span>
+                      <span className="text-slate-500 font-medium">Fever-Free Streak:</span>
                       <span className="font-bold text-slate-800">
-                        {streak} completed day{streak === 1 ? '' : 's'}
+                        {streak} / 3 days required
                       </span>
                     </div>
                   </div>
@@ -360,10 +378,10 @@ export default function DoctorWorklist() {
                 {/* Open Patient Details Action */}
                 <button
                   onClick={() => handleOpenPatient(patient)}
-                  className="w-full py-2.5 px-4 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-xs"
+                  className="w-full py-2.5 px-4 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors"
                 >
                   <Stethoscope className="w-3.5 h-3.5" />
-                  Open Clinical File & Actions
+                  <span>Open Clinical File & Orders</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -372,7 +390,7 @@ export default function DoctorWorklist() {
         )}
       </div>
 
-      {/* FULL PATIENT CLINICAL DETAIL MODAL */}
+      {/* FULL PATIENT CLINICAL FILE MODAL */}
       {selectedPatient && (
         <DoctorPatientDetailModal
           patient={state.patients.find((p) => p.id === selectedPatient.id) || selectedPatient}
@@ -384,7 +402,7 @@ export default function DoctorWorklist() {
 }
 
 // ============================================================
-// DOCTOR PATIENT DETAIL MODAL (CLINICAL WORKFLOW SUITE)
+// DOCTOR PATIENT DETAIL MODAL (CLINICAL SUITE)
 // ============================================================
 
 interface DoctorPatientDetailModalProps {
@@ -395,27 +413,21 @@ interface DoctorPatientDetailModalProps {
 function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModalProps) {
   const {
     state,
-    currentUser,
     recordTemperature,
-    amendTemperature,
     markVisit,
-    addTreatment,
-    correctTreatment,
     approveDischarge,
-    declareDepth,
     withdrawDeathDeclaration,
     addNotification,
   } = useApp();
 
   const todayStr = today();
   const effReading = effectiveReadingForDate(state.temperatureReadings, patient.id, todayStr);
-  const patientVisits = state.doctorVisits.filter((v) => v.patientId === patient.id);
   const todayVisit = visitForDate(state.doctorVisits, patient.id, todayStr);
   const patientTreatments = state.treatments.filter((t) => t.patientId === patient.id);
   const streak = patient.feverFreeStreak ?? 0;
   const isEligible = patient.status === 'eligible';
 
-  // Sub-modal triggers
+  // Submodals
   const [showDoctorTempModal, setShowDoctorTempModal] = useState(false);
   const [showVisitConfirmModal, setShowVisitConfirmModal] = useState(false);
   const [showAddTreatmentModal, setShowAddTreatmentModal] = useState(false);
@@ -424,9 +436,8 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
   const [showDeathModal, setShowDeathModal] = useState(false);
   const [showWithdrawDeathConfirm, setShowWithdrawDeathConfirm] = useState(false);
 
-  // Temperature chart data
+  // Chronological readings for LineChart
   const chartData = useMemo(() => {
-    // Sort all readings chronologically
     const readings = [...state.temperatureReadings]
       .filter((r) => r.patientId === patient.id)
       .sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime());
@@ -440,10 +451,9 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
   }, [state.temperatureReadings, patient.id]);
 
   function handleMarkVisit() {
-    if (todayVisit) return; // already done
+    if (todayVisit) return;
 
     if (!effReading) {
-      // Temperature pending warning!
       setShowVisitConfirmModal(true);
       return;
     }
@@ -451,8 +461,8 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
     markVisit(patient.id, false);
     addNotification({
       type: 'success',
-      title: 'Visit Completed',
-      message: `Doctor visit logged for ${patient.name} (Bed ${patient.bedNumber}).`,
+      title: 'Physician Visit Logged',
+      message: `Doctor rounds completed for ${patient.name} (Bed ${patient.bedNumber}).`,
       patientId: patient.id,
     });
   }
@@ -461,27 +471,27 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
     approveDischarge(patient.id);
     addNotification({
       type: 'success',
-      title: 'Discharge Approved',
-      message: `${patient.name} has been approved for discharge. Queued for admin execution.`,
+      title: 'Discharge Approved by Physician',
+      message: `${patient.name} approved for discharge. Queued for administrative execution.`,
       patientId: patient.id,
     });
     setShowApproveConfirm(false);
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-500 flex items-center justify-center font-bold text-white">
+            <div className="w-10 h-10 rounded-xl bg-teal-500 font-mono font-bold text-white text-base flex items-center justify-center">
               B{patient.bedNumber}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold">{patient.name}</h2>
-                <span className="text-xs font-mono text-slate-300">({patient.id})</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-800 text-teal-200 uppercase">
+                <h2 className="text-base font-bold">{patient.name}</h2>
+                <span className="font-mono text-xs text-slate-300">({patient.id})</span>
+                <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-teal-900 text-teal-200 border border-teal-700 uppercase">
                   {patient.status.replace('_', ' ')}
                 </span>
               </div>
@@ -495,95 +505,89 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
-          {/* TOP QUICK ACTION STRIP */}
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-4 text-xs">
+        {/* Body Content */}
+        <div className="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+          {/* Quick Status and Actions Ribbon */}
+          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-5">
               <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Today's Temp</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Today's Temp</span>
                 {effReading ? (
-                  <span className="font-bold text-slate-900 text-sm">{effReading.value}°C</span>
+                  <span className="font-mono font-bold text-slate-900 text-sm mt-0.5 block">{effReading.value}°C</span>
                 ) : (
-                  <span className="text-amber-600 font-semibold">Not measured</span>
+                  <span className="text-amber-700 font-bold block mt-0.5">Not measured</span>
                 )}
               </div>
-              <div className="h-6 w-px bg-slate-200" />
+              <div className="h-7 w-px bg-slate-200" />
               <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Visit Status</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Visit Status</span>
                 {todayVisit ? (
-                  <span className="text-green-700 font-semibold">Visited ({formatTime(todayVisit.visitedAt)})</span>
+                  <span className="text-emerald-700 font-bold block mt-0.5">Visited ({formatTime(todayVisit.visitedAt)})</span>
                 ) : (
-                  <span className="text-slate-500">Pending visit</span>
+                  <span className="text-slate-500 font-medium block mt-0.5">Pending visit</span>
                 )}
               </div>
-              <div className="h-6 w-px bg-slate-200" />
+              <div className="h-7 w-px bg-slate-200" />
               <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Fever-Free Streak</span>
-                <span className="font-bold text-slate-800">{streak} / 3 days required</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Fever-Free Streak</span>
+                <span className="font-bold text-slate-900 block mt-0.5">{streak} / 3 days required</span>
               </div>
             </div>
 
-            {/* ACTION BUTTONS */}
+            {/* Action Buttons Cluster */}
             <div className="flex flex-wrap items-center gap-2">
-              {/* Record Temp as Doctor (if missing) */}
               {!effReading && (
                 <button
                   onClick={() => setShowDoctorTempModal(true)}
-                  className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-xs"
+                  className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-xs flex items-center gap-1 shadow-xs"
                 >
                   <Plus className="w-3.5 h-3.5" /> Record Missing Temp
                 </button>
               )}
 
-              {/* Complete Visit */}
               <button
                 disabled={!!todayVisit}
                 onClick={handleMarkVisit}
                 className={cn(
-                  'px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors',
+                  'px-3.5 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors',
                   todayVisit
-                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                    ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
                     : 'bg-teal-600 hover:bg-teal-700 text-white'
                 )}
               >
                 <Check className="w-3.5 h-3.5" />
-                {todayVisit ? `Visit Completed at ${formatTime(todayVisit.visitedAt)}` : 'Mark Today\'s Visit Complete'}
+                {todayVisit ? `Visit Done (${formatTime(todayVisit.visitedAt)})` : 'Mark Today\'s Visit Complete'}
               </button>
 
-              {/* Prescribe Treatment */}
               <button
                 onClick={() => setShowAddTreatmentModal(true)}
-                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-xs"
+                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-bold text-xs flex items-center gap-1 shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Treatment
               </button>
 
-              {/* Approve Discharge (Disabled if not eligible) */}
               {patient.status === 'eligible' && (
                 <button
                   onClick={() => setShowApproveConfirm(true)}
-                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-xs"
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center gap-1.5 shadow-xs"
                 >
                   <Award className="w-3.5 h-3.5" /> Approve Discharge
                 </button>
               )}
 
-              {/* Declare Death */}
               {patient.status !== 'death_declared' && patient.status !== 'death_confirmed' && (
                 <button
                   onClick={() => setShowDeathModal(true)}
-                  className="px-3 py-1.5 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-xs font-semibold flex items-center gap-1"
+                  className="px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded-lg font-bold text-xs flex items-center gap-1"
                 >
                   <HeartCrack className="w-3.5 h-3.5" /> Declare Death
                 </button>
               )}
 
-              {/* Withdraw Death Declaration */}
               {patient.status === 'death_declared' && (
                 <button
                   onClick={() => setShowWithdrawDeathConfirm(true)}
-                  className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-xs"
+                  className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold text-xs flex items-center gap-1 shadow-xs"
                 >
                   <Undo2 className="w-3.5 h-3.5" /> Withdraw Declaration
                 </button>
@@ -591,25 +595,25 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
             </div>
           </div>
 
-          {/* SECTION 1: TEMPERATURE TRAJECTORY CHART & LOG */}
+          {/* Temperature Trajectory Chart & Discharge Readiness */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-5">
+            <div className="lg:col-span-2 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-teal-600" /> Temperature Trajectory Chart
                 </h3>
                 <div className="flex items-center gap-3 text-[11px]">
                   <span className="flex items-center gap-1 text-amber-600 font-medium">
-                    <span className="w-2.5 h-0.5 bg-amber-500 inline-block" /> 38.0°C Fever
+                    <span className="w-2.5 h-0.5 bg-amber-500 inline-block" /> 38.0°C Fever Line
                   </span>
                   <span className="flex items-center gap-1 text-red-600 font-medium">
-                    <span className="w-2.5 h-0.5 bg-red-500 inline-block" /> 39.5°C Critical
+                    <span className="w-2.5 h-0.5 bg-red-500 inline-block" /> 39.5°C Critical Line
                   </span>
                 </div>
               </div>
 
               {chartData.length === 0 ? (
-                <div className="h-56 flex items-center justify-center text-xs text-slate-400">
+                <div className="h-56 flex items-center justify-center text-slate-400">
                   No readings available to chart
                 </div>
               ) : (
@@ -639,24 +643,24 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
               )}
             </div>
 
-            {/* DISCHARGE ELIGIBILITY SUMMARY */}
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex flex-col justify-between">
+            {/* Biological Readiness Card */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between shadow-2xs">
               <div>
                 <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 mb-2">
-                  Discharge Readiness Assessment
+                  Discharge Biological Criteria
                 </h4>
                 <div className="p-3 bg-white border border-slate-200 rounded-xl mb-3">
-                  <span className="text-xs text-slate-500 block">Consecutive Fever-Free Days:</span>
+                  <span className="text-[11px] text-slate-500 block font-medium">Completed Fever-Free Days:</span>
                   <div className="flex items-baseline gap-2 mt-1">
                     <span className="text-3xl font-extrabold text-slate-900">{streak}</span>
-                    <span className="text-xs text-slate-500">/ 3 completed days required</span>
+                    <span className="text-xs text-slate-500">/ 3 completed days</span>
                   </div>
                 </div>
 
-                <div className="space-y-1.5 text-xs">
+                <div className="space-y-2 text-xs">
                   <div className="flex items-center gap-2">
                     {streak >= 3 ? (
-                      <CheckCircle className="w-4 h-4 text-emerald-600" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     ) : (
                       <Clock className="w-4 h-4 text-slate-400" />
                     )}
@@ -665,41 +669,41 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-emerald-600" />
-                    <span className="text-slate-600">Daily readings recorded</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span className="text-slate-600">Daily readings verified</span>
                   </div>
                 </div>
               </div>
 
               <div className="mt-4 pt-3 border-t border-slate-200">
                 {isEligible ? (
-                  <p className="text-xs text-emerald-800 font-medium">
+                  <p className="text-[11px] text-emerald-800 font-bold">
                     ✓ Patient meets all biological discharge criteria. Physician may approve discharge.
                   </p>
                 ) : (
                   <p className="text-[11px] text-slate-500">
-                    Patient remains under active isolation until 3 consecutive completed fever-free days are verified.
+                    Active quarantine isolation required until 3 consecutive completed fever-free days are verified.
                   </p>
                 )}
               </div>
             </div>
           </div>
 
-          {/* SECTION 2: TREATMENTS HISTORY & ADD */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5">
+          {/* Treatment Orders Section */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-sm text-slate-900">Clinical Treatment Regimen</h3>
+              <h3 className="font-bold text-sm text-slate-900">Clinical Treatment Regimen & Orders</h3>
               <button
                 onClick={() => setShowAddTreatmentModal(true)}
-                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1"
+                className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-lg flex items-center gap-1 transition-colors"
               >
-                <Plus className="w-3.5 h-3.5" /> Add Treatment
+                <Plus className="w-3.5 h-3.5" /> Prescribe Treatment
               </button>
             </div>
 
             <div className="space-y-3">
               {patientTreatments.length === 0 ? (
-                <div className="py-6 text-center text-xs text-slate-400 border border-dashed rounded-xl">
+                <div className="py-8 text-center text-slate-400 border border-dashed rounded-xl">
                   No treatments prescribed yet.
                 </div>
               ) : (
@@ -707,13 +711,13 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
                   <div
                     key={t.id}
                     className={cn(
-                      'p-4 rounded-xl border text-xs flex flex-col md:flex-row md:items-center justify-between gap-3',
+                      'p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-3',
                       t.isCorrectionOf ? 'bg-amber-50/40 border-amber-200' : 'bg-slate-50 border-slate-200'
                     )}
                   >
                     <div>
                       <div className="flex items-center gap-2 text-[11px] text-slate-400 mb-1">
-                        <span className="font-semibold text-slate-700">{t.addedBy}</span>
+                        <span className="font-bold text-slate-800">{t.addedBy}</span>
                         <span>·</span>
                         <span>{formatDateTime(t.addedAt)}</span>
                         {t.isCorrectionOf && (
@@ -724,8 +728,8 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
                       </div>
                       <p className="text-slate-900 font-medium leading-relaxed">{t.description}</p>
                       {t.correctionReason && (
-                        <p className="text-[11px] text-amber-800 italic mt-1.5">
-                          Correction reason: {t.correctionReason}
+                        <p className="text-[11px] text-amber-900 italic mt-1.5">
+                          <strong>Correction reason:</strong> {t.correctionReason}
                         </p>
                       )}
                     </div>
@@ -733,7 +737,7 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
                     {!t.isCorrectionOf && (
                       <button
                         onClick={() => setCorrectingTreatment(t)}
-                        className="self-start md:self-auto px-2.5 py-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 text-[11px] font-semibold rounded-lg flex items-center gap-1 shadow-xs"
+                        className="self-start md:self-auto px-2.5 py-1 bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 text-[11px] font-semibold rounded-lg flex items-center gap-1 shadow-2xs"
                       >
                         <Edit2 className="w-3 h-3 text-slate-500" /> Correct
                       </button>
@@ -746,20 +750,20 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-          <div className="text-xs text-slate-500">
-            Assigned: Dr. {patient.doctorName} · Emergency Contact: {patient.emergencyContactName} ({patient.emergencyContactPhone})
-          </div>
+        <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200/80 flex items-center justify-between">
+          <span className="text-[11px] text-slate-500">
+            Emergency Contact: {patient.emergencyContactName} ({patient.emergencyContactPhone})
+          </span>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-200 text-slate-700 hover:bg-slate-300 text-xs font-bold rounded-xl"
+            className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl"
           >
             Close Clinical File
           </button>
         </div>
       </div>
 
-      {/* SUB-MODAL 1: DOCTOR RECORD TEMPERATURE MODAL (MANDATORY REASON) */}
+      {/* SUBMODALS */}
       {showDoctorTempModal && (
         <DoctorRecordTemperatureModal
           patient={patient}
@@ -768,7 +772,6 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
         />
       )}
 
-      {/* SUB-MODAL 2: VISIT BEFORE TEMPERATURE WARNING */}
       {showVisitConfirmModal && (
         <VisitBeforeTempWarningModal
           patient={patient}
@@ -790,7 +793,6 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
         />
       )}
 
-      {/* SUB-MODAL 3: ADD TREATMENT MODAL */}
       {showAddTreatmentModal && (
         <AddTreatmentModal
           patient={patient}
@@ -799,7 +801,6 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
         />
       )}
 
-      {/* SUB-MODAL 4: CORRECT TREATMENT MODAL */}
       {correctingTreatment && (
         <CorrectTreatmentModal
           originalTreatment={correctingTreatment}
@@ -808,17 +809,16 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
         />
       )}
 
-      {/* SUB-MODAL 5: APPROVE DISCHARGE CONFIRMATION */}
       {showApproveConfirm && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
             <div className="flex items-center gap-2 text-emerald-800 font-bold text-base">
               <Award className="w-5 h-5 text-emerald-600" />
-              Approve Patient Discharge
+              Approve Biological Discharge
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Confirm that <span className="font-bold">{patient.name}</span> has met the required clinical criteria (3 completed fever-free days).
-              Upon approval, this record will transition to the Admin Discharge Execution Queue. The patient continues to occupy Bed {patient.bedNumber} until an admin executes discharge.
+              Confirm that <strong>{patient.name}</strong> meets all discharge safety rules (3 consecutive completed fever-free days).
+              Record will queue for administrative discharge execution and bed release.
             </p>
             <div className="flex justify-end gap-2 pt-2 border-t">
               <button
@@ -838,26 +838,23 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
         </div>
       )}
 
-      {/* SUB-MODAL 6: DECLARE DEATH MODAL */}
       {showDeathModal && (
         <DeclareDeathModal
           patient={patient}
           onClose={() => setShowDeathModal(false)}
           onSuccess={() => {
             setShowDeathModal(false);
-            onClose(); // close clinical file
+            onClose();
           }}
         />
       )}
 
-      {/* SUB-MODAL 7: WITHDRAW DEATH CONFIRMATION */}
       {showWithdrawDeathConfirm && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
             <h3 className="font-bold text-slate-900 text-base">Withdraw Death Declaration</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Are you sure you want to withdraw the death declaration for <span className="font-bold">{patient.name}</span>?
-              The patient will be restored to active clinical monitoring.
+              Withdraw death declaration for <strong>{patient.name}</strong>? Patient will be restored to active clinical care.
             </p>
             <div className="flex justify-end gap-2 pt-2 border-t">
               <button
@@ -873,7 +870,7 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
                   addNotification({
                     type: 'info',
                     title: 'Death Declaration Withdrawn',
-                    message: `Death declaration withdrawn for ${patient.name}. Patient restored to active worklists.`,
+                    message: `Restored ${patient.name} to active rounds.`,
                     patientId: patient.id,
                   });
                 }}
@@ -902,7 +899,7 @@ function DoctorRecordTemperatureModal({
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  const { recordTemperature, currentUser } = useApp();
+  const { recordTemperature } = useApp();
   const [valStr, setValStr] = useState('');
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -910,16 +907,16 @@ function DoctorRecordTemperatureModal({
   function handleSave() {
     const v = parseFloat(valStr);
     if (isNaN(v) || v < 34.0 || v > 42.0) {
-      setError('Please enter a valid temperature between 34.0°C and 42.0°C');
+      setError('Enter a valid temperature between 34.0°C and 42.0°C.');
       return;
     }
     const parts = valStr.trim().split('.');
     if (parts.length > 1 && parts[1].length > 1) {
-      setError('Maximum 1 decimal place allowed');
+      setError('Maximum 1 decimal place allowed.');
       return;
     }
     if (!reason.trim() || reason.trim().length < 5 || reason.trim().length > 200) {
-      setError('A mandatory clinical reason of 5–200 characters is required for doctor entry');
+      setError('A mandatory clinical rationale of 5–200 characters is required for doctor entry.');
       return;
     }
 
@@ -928,20 +925,21 @@ function DoctorRecordTemperatureModal({
   }
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+      <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl text-xs">
         <div className="flex items-center justify-between border-b pb-3">
           <h3 className="font-bold text-slate-900 text-base">Physician Temperature Entry</h3>
           <button onClick={onClose}><X className="w-5 h-5 text-slate-400" /></button>
         </div>
 
-        <div className="text-xs text-slate-500">
-          Entering reading for <span className="font-bold text-slate-700">{patient.name}</span> (Bed {patient.bedNumber}).
-          Nurse's worklist will update immediately.
-        </div>
+        <p className="text-slate-500">
+          Entering measurement for <strong>{patient.name}</strong> (Bed {patient.bedNumber}). Nurse worklist will update immediately.
+        </p>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Temperature (°C) *</label>
+          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            Temperature (°C) *
+          </label>
           <input
             type="number"
             step="0.1"
@@ -953,25 +951,25 @@ function DoctorRecordTemperatureModal({
               setValStr(e.target.value);
               setError(null);
             }}
-            className="w-full text-2xl font-bold p-3 border rounded-xl focus:ring-2 focus:ring-teal-400 focus:outline-none"
+            className="w-full text-2xl font-bold p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-400 font-mono"
             autoFocus
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
-            Mandatory Clinical Reason (5–200 chars) *
+          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            Mandatory Clinical Rationale (5–200 chars) *
           </label>
           <textarea
             rows={3}
             maxLength={200}
-            placeholder="e.g. Patient evaluated in rounds; reading measured directly due to acute symptom report."
+            placeholder="e.g. Verified during clinical rounds following patient report of chills."
             value={reason}
             onChange={(e) => {
               setReason(e.target.value);
               setError(null);
             }}
-            className="w-full text-xs p-3 border rounded-xl focus:ring-2 focus:ring-teal-400 focus:outline-none"
+            className="w-full text-xs p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-400"
           />
           <div className="flex justify-between text-[10px] text-slate-400 mt-1">
             <span>Required for doctor entries</span>
@@ -1013,18 +1011,18 @@ function VisitBeforeTempWarningModal({
   onCancel: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+      <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl text-xs">
         <div className="flex items-center gap-2 text-amber-800 font-bold text-base">
           <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
           Visit Before Temperature Warning
         </div>
-        <p className="text-xs text-slate-600 leading-relaxed">
-          Today's temperature has <span className="font-bold text-slate-900">not been recorded</span> for{' '}
-          <span className="font-semibold">{patient.name}</span> (Bed {patient.bedNumber}).
+        <p className="text-slate-600 leading-relaxed">
+          Today's temperature has <strong>not been measured yet</strong> for{' '}
+          <strong>{patient.name}</strong> (Bed {patient.bedNumber}).
         </p>
-        <p className="text-xs text-slate-600 leading-relaxed">
-          It is recommended to evaluate patients after temperature measurement. You may measure the temperature now, or proceed with the visit (which will be logged as <span className="font-mono text-amber-700 font-semibold">"Visit before temperature"</span> for audit and analytics).
+        <p className="text-slate-600 leading-relaxed">
+          Best clinical practice requires evaluating temperature before clinical rounding. You may record the temperature now, or proceed with the visit (which will be logged as <strong className="font-mono text-amber-700">"Visit before temperature"</strong> for hospital audit).
         </p>
 
         <div className="flex flex-col sm:flex-row justify-end gap-2 pt-3 border-t">
@@ -1036,15 +1034,15 @@ function VisitBeforeTempWarningModal({
           </button>
           <button
             onClick={onRecordTemp}
-            className="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-lg text-center"
+            className="px-3.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg text-center"
           >
-            Record Temperature Now
+            Measure Temperature Now
           </button>
           <button
             onClick={onConfirmVisit}
-            className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg text-center"
+            className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg text-center"
           >
-            Proceed with Visit Anyway
+            Proceed with Visit
           </button>
         </div>
       </div>
@@ -1071,7 +1069,7 @@ function AddTreatmentModal({
 
   function handleSave() {
     if (!desc.trim() || desc.trim().length < 3 || desc.trim().length > 500) {
-      setError('Treatment description must be between 3 and 500 characters');
+      setError('Treatment description must be between 3 and 500 characters.');
       return;
     }
     addTreatment(patient.id, desc.trim());
@@ -1079,20 +1077,20 @@ function AddTreatmentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+      <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl text-xs">
         <div className="flex items-center justify-between border-b pb-3">
           <h3 className="font-bold text-slate-900 text-base">Prescribe Treatment</h3>
           <button onClick={onClose}><X className="w-5 h-5 text-slate-400" /></button>
         </div>
 
-        <p className="text-xs text-slate-500">
-          Patient: <span className="font-semibold text-slate-800">{patient.name}</span> (Bed {patient.bedNumber})
+        <p className="text-slate-500">
+          Patient: <strong>{patient.name}</strong> (Bed {patient.bedNumber})
         </p>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
-            Treatment Description (3–500 chars) *
+          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            Treatment Prescription & Orders (3–500 chars) *
           </label>
           <textarea
             rows={4}
@@ -1103,7 +1101,7 @@ function AddTreatmentModal({
               setDesc(e.target.value);
               setError(null);
             }}
-            className="w-full text-xs p-3 border rounded-xl focus:ring-2 focus:ring-teal-400 focus:outline-none"
+            className="w-full text-xs p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-400"
             autoFocus
           />
           <div className="flex justify-between text-[10px] text-slate-400 mt-1">
@@ -1150,11 +1148,11 @@ function CorrectTreatmentModal({
 
   function handleSave() {
     if (!desc.trim() || desc.trim().length < 3 || desc.trim().length > 500) {
-      setError('Description must be between 3 and 500 characters');
+      setError('Description must be between 3 and 500 characters.');
       return;
     }
     if (!reason.trim() || reason.trim().length < 5) {
-      setError('A mandatory reason of at least 5 characters is required');
+      setError('A mandatory reason of at least 5 characters is required.');
       return;
     }
     correctTreatment(originalTreatment.id, desc.trim(), reason.trim());
@@ -1162,20 +1160,20 @@ function CorrectTreatmentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+      <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl text-xs">
         <div className="flex items-center justify-between border-b pb-3">
           <h3 className="font-bold text-slate-900 text-base">Treatment Correction</h3>
           <button onClick={onClose}><X className="w-5 h-5 text-slate-400" /></button>
         </div>
 
-        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600">
+        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600">
           <span className="font-semibold text-slate-700 block mb-0.5">Original Prescription:</span>
           <p className="italic">{originalTreatment.description}</p>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
+          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
             Corrected Description *
           </label>
           <textarea
@@ -1186,13 +1184,13 @@ function CorrectTreatmentModal({
               setDesc(e.target.value);
               setError(null);
             }}
-            className="w-full text-xs p-3 border rounded-xl focus:ring-2 focus:ring-teal-400 focus:outline-none"
+            className="w-full text-xs p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-400"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
-            Mandatory Reason for Correction *
+          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+            Mandatory Rationale for Correction *
           </label>
           <textarea
             rows={2}
@@ -1203,7 +1201,7 @@ function CorrectTreatmentModal({
               setReason(e.target.value);
               setError(null);
             }}
-            className="w-full text-xs p-3 border rounded-xl focus:ring-2 focus:ring-teal-400 focus:outline-none"
+            className="w-full text-xs p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-400"
           />
         </div>
 
@@ -1244,50 +1242,50 @@ function DeclareDeathModal({
 
   function handleDeclare() {
     if (!note.trim() || note.trim().length < 5 || note.trim().length > 500) {
-      setError('A mandatory clinical note between 5 and 500 characters is required');
+      setError('A mandatory clinical declaration note between 5 and 500 characters is required.');
       return;
     }
     declareDepth(patient.id, note.trim());
     addNotification({
       type: 'warning',
-      title: 'Death Declared',
-      message: `Death declared for ${patient.name} (Bed ${patient.bedNumber}). Transferred to Admin for final confirmation.`,
+      title: 'Death Declared by Physician',
+      message: `Death declared for ${patient.name} (Bed ${patient.bedNumber}). Transferred to Admin for confirmation.`,
       patientId: patient.id,
     });
     onSuccess();
   }
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4">
-      <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl border-2 border-red-300">
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+      <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl border-2 border-red-300 text-xs">
         <div className="flex items-center gap-2 text-red-700 font-bold text-base border-b pb-3">
           <HeartCrack className="w-5 h-5 text-red-600" />
           Declare Patient Death
         </div>
 
-        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-900 leading-relaxed">
-          <p className="font-bold mb-1">Important Workflow Notice:</p>
-          <ul className="list-disc pl-4 space-y-1">
-            <li>Patient will be removed immediately from Nurse and Doctor active worklists.</li>
+        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-900 leading-relaxed">
+          <p className="font-bold mb-1">Clinical Protocol Notice:</p>
+          <ul className="list-disc pl-4 space-y-1 text-[11px]">
+            <li>Patient will immediately be removed from Nurse & Doctor daily worklists.</li>
             <li>Bed {patient.bedNumber} will remain occupied until an Admin confirms the declaration.</li>
             <li>Once confirmed by Admin, the record is permanently locked and counted toward facility mortality.</li>
           </ul>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
+          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
             Mandatory Clinical Declaration Note (5–500 chars) *
           </label>
           <textarea
             rows={4}
             maxLength={500}
-            placeholder="Clinical details, time of circulatory/respiratory cessation, CPR attempts, and underlying cause of death."
+            placeholder="Clinical details, time of circulatory cessation, CPR attempts, and underlying cause of death."
             value={note}
             onChange={(e) => {
               setNote(e.target.value);
               setError(null);
             }}
-            className="w-full text-xs p-3 border rounded-xl focus:ring-2 focus:ring-red-400 focus:outline-none"
+            className="w-full text-xs p-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-red-400"
             autoFocus
           />
           <div className="flex justify-between text-[10px] text-slate-400 mt-1">
