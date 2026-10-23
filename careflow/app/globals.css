@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Explicit source paths for Tailwind v4 scanner — required for Vercel/Turbopack production builds */
+@source "../components";
+@source "../app";
+@source "../lib";
+
 @layer base {
   :root {
     --background: #f8fafc;

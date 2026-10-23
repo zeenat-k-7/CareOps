@@ -3,5 +3,6 @@
   "framework": "nextjs",
   "buildCommand": "cd careflow && npm run build",
   "outputDirectory": "careflow/.next",
-  "installCommand": "cd careflow && npm install"
+  "installCommand": "cd careflow && npm ci",
+  "cleanUrls": true
 }
