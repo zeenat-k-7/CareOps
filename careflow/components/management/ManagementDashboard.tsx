@@ -22,7 +22,6 @@ export default function ManagementDashboard() {
   const [range, setRange] = useState<TimeRange>('7days');
 
   const todayStr = today();
-  const now = new Date();
 
   // Determine date bounds based on range
   const rangeBounds = useMemo(() => {
@@ -31,14 +30,14 @@ export default function ManagementDashboard() {
     if (range === 'today') {
       start.setHours(0, 0, 0, 0);
     } else if (range === '7days') {
-      start.setDate(now.getDate() - 7);
+      start.setDate(start.getDate() - 7);
       start.setHours(0, 0, 0, 0);
     } else {
-      start.setDate(now.getDate() - 30);
+      start.setDate(start.getDate() - 30);
       start.setHours(0, 0, 0, 0);
     }
     return { start, end };
-  }, [range, now]);
+  }, [range]);
 
   // Closed cases in selected time range (discharged or confirmed deceased)
   const closedCases = useMemo(() => {

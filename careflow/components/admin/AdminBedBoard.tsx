@@ -84,7 +84,7 @@ export default function AdminBedBoard() {
         <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
             <span>Occupied Beds</span>
-            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.2 rounded">
+            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
               Active
             </span>
           </div>
@@ -97,7 +97,7 @@ export default function AdminBedBoard() {
         <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium mb-1">
             <span>Available Reserves</span>
-            <span className={cn('text-xs font-bold px-2 py-0.2 rounded', free === 0 ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700')}>
+            <span className={cn('text-xs font-bold px-2 py-0.5 rounded', free === 0 ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700')}>
               {free === 0 ? 'Full' : 'Ready'}
             </span>
           </div>
@@ -382,7 +382,7 @@ function ReassignBedModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <div>

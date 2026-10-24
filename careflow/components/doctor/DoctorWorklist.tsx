@@ -479,7 +479,7 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
@@ -491,7 +491,7 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold">{patient.name}</h2>
                 <span className="font-mono text-xs text-slate-300">({patient.id})</span>
-                <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-teal-900 text-teal-200 border border-teal-700 uppercase">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-900 text-teal-200 border border-teal-700 uppercase">
                   {patient.status.replace('_', ' ')}
                 </span>
               </div>
@@ -721,7 +721,7 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
                         <span>·</span>
                         <span>{formatDateTime(t.addedAt)}</span>
                         {t.isCorrectionOf && (
-                          <span className="px-1.5 py-0.2 bg-amber-200 text-amber-900 font-bold rounded text-[10px]">
+                          <span className="px-1.5 py-0.5 bg-amber-200 text-amber-900 font-bold rounded text-[10px]">
                             Correction
                           </span>
                         )}
@@ -810,7 +810,7 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
       )}
 
       {showApproveConfirm && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
             <div className="flex items-center gap-2 text-emerald-800 font-bold text-base">
               <Award className="w-5 h-5 text-emerald-600" />
@@ -850,7 +850,7 @@ function DoctorPatientDetailModal({ patient, onClose }: DoctorPatientDetailModal
       )}
 
       {showWithdrawDeathConfirm && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
             <h3 className="font-bold text-slate-900 text-base">Withdraw Death Declaration</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
@@ -925,7 +925,7 @@ function DoctorRecordTemperatureModal({
   }
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl text-xs">
         <div className="flex items-center justify-between border-b pb-3">
           <h3 className="font-bold text-slate-900 text-base">Physician Temperature Entry</h3>
@@ -1011,7 +1011,7 @@ function VisitBeforeTempWarningModal({
   onCancel: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl text-xs">
         <div className="flex items-center gap-2 text-amber-800 font-bold text-base">
           <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
@@ -1077,7 +1077,7 @@ function AddTreatmentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl text-xs">
         <div className="flex items-center justify-between border-b pb-3">
           <h3 className="font-bold text-slate-900 text-base">Prescribe Treatment</h3>
@@ -1160,7 +1160,7 @@ function CorrectTreatmentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl text-xs">
         <div className="flex items-center justify-between border-b pb-3">
           <h3 className="font-bold text-slate-900 text-base">Treatment Correction</h3>
@@ -1256,7 +1256,7 @@ function DeclareDeathModal({
   }
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl border-2 border-red-300 text-xs">
         <div className="flex items-center gap-2 text-red-700 font-bold text-base border-b pb-3">
           <HeartCrack className="w-5 h-5 text-red-600" />

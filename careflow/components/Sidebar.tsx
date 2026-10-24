@@ -109,7 +109,7 @@ export default function Sidebar({ activeNav, onNav }: SidebarProps) {
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-bold text-base text-slate-900 tracking-tight">CareFlow</span>
-              <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 bg-teal-50 text-teal-700 border border-teal-200 rounded">
+              <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-teal-50 text-teal-700 border border-teal-200 rounded">
                 OPS
               </span>
             </div>

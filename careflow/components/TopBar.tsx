@@ -159,7 +159,7 @@ export default function TopBar({ activeNav, onNav }: TopBarProps) {
                     Notifications
                   </h3>
                   {unreadCount > 0 && (
-                    <span className="px-1.5 py-0.2 bg-rose-100 text-rose-700 text-[10px] font-bold rounded">
+                    <span className="px-1.5 py-0.5 bg-rose-100 text-rose-700 text-[10px] font-bold rounded">
                       {unreadCount} unread
                     </span>
                   )}

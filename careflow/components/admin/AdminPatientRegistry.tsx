@@ -565,7 +565,7 @@ function RegisterPatientModal({ onClose, onSuccess }: RegisterPatientModalProps)
   const calculatedAge = form.dateOfBirth ? calcAge(form.dateOfBirth) : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/50">
@@ -643,7 +643,7 @@ function RegisterPatientModal({ onClose, onSuccess }: RegisterPatientModalProps)
                   Date of Birth *
                 </label>
                 {calculatedAge !== null && !isNaN(calculatedAge) && calculatedAge >= 0 && (
-                  <span className="text-[11px] font-bold text-teal-700 bg-teal-50 px-2 py-0.2 rounded border border-teal-200">
+                  <span className="text-[11px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
                     Age: {calculatedAge} yrs
                   </span>
                 )}
@@ -876,7 +876,7 @@ function AdminPatientDetailModal({
   const badge = getStatusBadge(patient.status);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <div>

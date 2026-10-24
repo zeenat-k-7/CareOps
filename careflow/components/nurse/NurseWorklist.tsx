@@ -480,7 +480,7 @@ function NurseTemperatureModal({ patient, onClose, onSuccess }: NurseTemperature
   const isModerateFever = !isNaN(numericVal) && numericVal >= 38.0 && numericVal < 39.5;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
@@ -637,13 +637,13 @@ function TreatmentPlanModal({ patient, onClose }: { patient: Patient; onClose: (
   const treatments = state.treatments.filter((t) => t.patientId === patient.id);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-base">Prescribed Treatment Regimen</h3>
-              <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 uppercase">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 uppercase">
                 Read-Only
               </span>
             </div>
@@ -721,7 +721,7 @@ function TemperatureHistoryModal({
   const todayStr = today();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <div>
@@ -768,17 +768,17 @@ function TemperatureHistoryModal({
                     <div className="flex items-center gap-2">
                       <span className="text-base font-bold text-slate-900 font-mono">{r.value}°C</span>
                       {critical && (
-                        <span className="px-1.5 py-0.2 bg-red-100 text-red-800 text-[10px] font-bold rounded">
+                        <span className="px-1.5 py-0.5 bg-red-100 text-red-800 text-[10px] font-bold rounded">
                           Critical
                         </span>
                       )}
                       {fever && !critical && (
-                        <span className="px-1.5 py-0.2 bg-amber-100 text-amber-800 text-[10px] font-bold rounded">
+                        <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded">
                           Fever
                         </span>
                       )}
                       {r.isAmendment && (
-                        <span className="px-1.5 py-0.2 bg-purple-100 text-purple-800 text-[10px] font-medium rounded">
+                        <span className="px-1.5 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-medium rounded">
                           Amended
                         </span>
                       )}
@@ -854,7 +854,7 @@ function AmendTemperatureModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4 text-xs animate-in fade-in zoom-in-95 duration-150">
         <div className="flex items-center justify-between border-b pb-3">
           <h3 className="font-bold text-slate-900 text-base">Amend Temperature Reading</h3>

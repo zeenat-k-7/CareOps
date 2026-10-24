@@ -60,7 +60,7 @@ export default function AdminStaffAndDischarge() {
               {t.count !== undefined && t.count > 0 && (
                 <span
                   className={cn(
-                    'px-1.5 py-0.2 text-[10px] font-bold rounded-full',
+                    'px-1.5 py-0.5 text-[10px] font-bold rounded-full',
                     isActive ? 'bg-teal-500 text-white' : 'bg-teal-100 text-teal-800'
                   )}
                 >
@@ -563,7 +563,7 @@ function AddStaffModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-2xs">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <h3 className="font-bold text-base">Add Medical Staff Member</h3>
